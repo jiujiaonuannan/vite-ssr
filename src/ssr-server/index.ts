@@ -5,6 +5,19 @@ import path from 'path';
 import { renderToString } from 'react-dom/server';
 import { ViteDevServer } from 'vite';
 import serve from 'serve-static';
+import Helmet from 'react-helmet';
+import { performance, PerformanceObserver } from 'perf_hooks';
+
+
+// 初始化监听器逻辑
+const perfObserver = new PerformanceObserver((items) => {
+  items.getEntries().forEach(entry => { 
+    console.log('[performance]', entry.name, entry.duration.toFixed(2), 'ms');
+  });
+  performance.clearMarks();
+});
+
+perfObserver.observe({ entryTypes: ["measure"] })
 
 const isProd = process.env.NODE_ENV === 'production';
 const cwd = process.cwd();
@@ -62,6 +75,12 @@ async function createSsrMiddleware(app: Express): Promise<RequestHandler> {
       // 3. 「核心」: 渲染服务端组件 -> 字符串
       performance.mark('render-start');
       const appHtml = renderToString(React.createElement(ServerEntry, { data }));
+
+			const helmet = Helmet.renderStatic();
+			console.log("title 内容: ", helmet.title.toString());
+			console.log("link 内容: ", helmet.link.toString())
+
+
       performance.mark('render-end');
       performance.measure('renderToString', 'render-start', 'render-end');
       // console.log('renderToString 执行时间: ', renderTime.duration.toFixed(2), 'ms');
